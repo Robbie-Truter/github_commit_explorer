@@ -53,7 +53,6 @@ This will start the application, usually accessible at `http://localhost:5173/` 
 
 Due to time constraints, not all desired features could be implemented. Potential future enhancements include:
 
-- **Commit Filtering and Sorting** – Allow filtering commits by author or date, and add sorting options for better navigation.
 - **Enhanced Error Handling** – Provide clearer error messages and more specific feedback for different failure scenarios.
 - **Testing with Vitest** – Add unit and integration tests to ensure code reliability.
 - **Component Separation** – Split commits and commit details into dedicated components, each with its own Pinia store, loading state, and error handling.
