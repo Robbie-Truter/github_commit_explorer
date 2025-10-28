@@ -10,50 +10,53 @@ const props = defineProps<{
 
 const githubStore = useGithubStore();
 
-const currentPage = ref(1);
-const itemsPerPage = 10;
+const commitCurrentPage = ref(1);
+const commitItemsPerPage = 10;
 
-// Computed property to calculate total pages for pagination
-const totalPages = computed(() => Math.ceil(githubStore.repos.length / itemsPerPage));
+const commitTotalPages = computed(() =>
+  // Calculates the total number of pages for commits
+  Math.ceil(githubStore.commits.length / commitItemsPerPage)
+);
 
-// Computed property to get repositories for the current page
-const paginatedRepos = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return githubStore.repos.slice(start, end);
+const paginatedCommits = computed(() => {
+  // Returns the commits for the current page
+  const start = (commitCurrentPage.value - 1) * commitItemsPerPage;
+  const end = start + commitItemsPerPage;
+  return githubStore.commits.slice(start, end);
 });
 
-// Function to navigate to the previous page
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--;
+const commitPrevPage = () => {
+  // Navigates to the previous page of commits
+  if (commitCurrentPage.value > 1) commitCurrentPage.value--;
 };
 
-// Function to navigate to the next page
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++;
+const commitNextPage = () => {
+  // Navigates to the next page of commits
+  if (commitCurrentPage.value < commitTotalPages.value) commitCurrentPage.value++;
 };
 
-// Function to view a specific repository's commits
 const viewRepo = async (selectedRepo: string) => {
+  // Fetches commits for a selected repository
   if (selectedRepo !== githubStore.selectedRepoName) {
+    commitCurrentPage.value = 1;
     await githubStore.fetchCommits(props.username, selectedRepo);
   }
 };
 
-// Function to view details of a specific commit
 const viewCommitDetails = async (repoName: string | null, commitSha: string) => {
+  // Fetches and displays details for a specific commit
   if (repoName) {
     await githubStore.fetchCommitDetails(props.username, repoName, commitSha);
   }
 };
 
-// Function to check if a commit is a favourite
 const isFavourite = (commit: Commit) => {
+  // Checks if a commit is marked as a favourite
   return githubStore.favourites.some((c) => c.sha === commit.sha);
 };
 
-// Function to toggle a commit's favourite status
 const toggleFavourite = (commit: Commit) => {
+  // Toggles the favourite status of a commit
   if (isFavourite(commit)) {
     githubStore.removeFavourite(commit);
   } else {
@@ -62,6 +65,7 @@ const toggleFavourite = (commit: Commit) => {
 };
 
 onMounted(async () => {
+  // Fetches repositories when the component is mounted
   await githubStore.fetchRepos(props.username);
 });
 </script>
@@ -80,7 +84,7 @@ onMounted(async () => {
     <section v-if="!githubStore.reposLoading && !githubStore.error">
       <div v-if="githubStore.repos && githubStore.repos.length > 0" class="repo-list">
         <article
-          v-for="repo in paginatedRepos"
+          v-for="repo in githubStore.repos"
           :key="repo.id"
           @click="viewRepo(repo.name)"
           class="repo-item"
@@ -90,7 +94,7 @@ onMounted(async () => {
           <div v-if="githubStore.selectedRepoName === repo.name" class="commit-section">
             <div v-if="githubStore.commits.length > 0" class="commit-list">
               <h3>Commits for {{ repo.name }}</h3>
-              <div v-for="commit in githubStore.commits" :key="commit.sha" class="commit-item">
+              <div v-for="commit in paginatedCommits" :key="commit.sha" class="commit-item">
                 <p><strong>Message:</strong> {{ commit.commit.message }}</p>
                 <p><strong>Author:</strong> {{ commit.commit.author.name }}</p>
                 <p>
@@ -120,18 +124,21 @@ onMounted(async () => {
                   </ul>
                 </div>
               </div>
+              <div class="pagination">
+                <button @click="commitPrevPage" :disabled="commitCurrentPage === 1">
+                  Previous
+                </button>
+                <span>Page {{ commitCurrentPage }} of {{ commitTotalPages }}</span>
+                <button @click="commitNextPage" :disabled="commitCurrentPage === commitTotalPages">
+                  Next
+                </button>
+              </div>
             </div>
             <div v-else class="no-commits">
               <p>No commits found for this repository.</p>
             </div>
           </div>
         </article>
-
-        <div class="pagination">
-          <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
-          <span>Page {{ currentPage }} of {{ totalPages }}</span>
-          <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
-        </div>
       </div>
 
       <div v-else class="no-repos">
